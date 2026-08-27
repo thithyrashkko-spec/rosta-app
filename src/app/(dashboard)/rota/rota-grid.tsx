@@ -238,17 +238,6 @@ export function RotaGrid({
     return counts;
   }
 
-  // Coverage: for a given date, count of staff on each duty code.
-  function coverageForDate(date: string) {
-    const counts = new Map<string, number>();
-    for (const s of staff) {
-      const id = entries[entryKey(s.id, date)];
-      if (!id) continue;
-      counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-    return counts;
-  }
-
   return (
     <div>
       {team && (team.name || team.departmentUnit || team.logoDataUrl) && (
@@ -327,91 +316,106 @@ export function RotaGrid({
             </tr>
           </thead>
           <tbody>
-            {groups.map(([designation, members]) => (
-              <Fragment key={designation}>
-                <tr key={`group-${designation}`}>
-                  <td
-                    colSpan={dates.length + 2}
-                    className="border-b border-border bg-teal-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white"
-                  >
-                    {designation}
-                  </td>
-                </tr>
-                {members.map((s) => {
-                  const totals = staffTotals(s.id);
-                  return (
-                    <tr key={s.id}>
-                      <td className="sticky left-0 z-10 border-b border-r border-border bg-white px-3 py-2 font-medium">
-                        {s.name}
-                      </td>
-                      {dates.map((d) => {
-                        const key = dateKey(d);
-                        const dutyCodeId = entries[entryKey(s.id, key)];
-                        const duty = dutyCodeId
-                          ? dutyCodeById.get(dutyCodeId)
-                          : null;
-                        return (
-                          <td
-                            key={key}
-                            onClick={(e) => openPicker(s.id, key, e)}
-                            className={`border-b border-border p-1 text-center align-middle ${
-                              isAdmin ? "cursor-pointer" : ""
-                            }`}
-                          >
-                            {duty ? (
-                              <span
-                                className="inline-block w-full rounded px-1.5 py-1 text-xs font-semibold text-white"
-                                style={{ backgroundColor: duty.color }}
-                                title={duty.name}
-                              >
-                                {duty.code}
-                              </span>
-                            ) : (
-                              <span className="inline-block w-full rounded px-1.5 py-1 text-xs text-gray-300 hover:bg-gray-50">
-                                —
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="border-b border-l border-border px-3 py-2 text-xs text-gray-500">
-                        {Array.from(totals.entries())
-                          .map(
-                            ([id, count]) =>
-                              `${dutyCodeById.get(id)?.code ?? "?"} ${count}`
-                          )
-                          .join(" · ") || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </Fragment>
-            ))}
+            {groups.map(([designation, members]) => {
+              const usedDutyCodeIds = dutyCodes
+                .filter((dc) =>
+                  members.some((m) =>
+                    dates.some(
+                      (d) => entries[entryKey(m.id, dateKey(d))] === dc.id
+                    )
+                  )
+                )
+                .map((dc) => dc.id);
 
-            {/* Coverage summary row per day */}
-            <tr>
-              <td className="sticky left-0 z-10 border-t-2 border-border bg-gray-50 px-3 py-2 text-xs font-semibold uppercase text-gray-500">
-                Coverage
-              </td>
-              {dates.map((d) => {
-                const key = dateKey(d);
-                const counts = coverageForDate(key);
-                return (
-                  <td
-                    key={key}
-                    className="border-t-2 border-border bg-gray-50 px-2 py-2 text-center text-[11px] text-gray-500"
-                  >
-                    {Array.from(counts.entries())
-                      .map(
-                        ([id, count]) =>
-                          `${dutyCodeById.get(id)?.code ?? "?"}:${count}`
-                      )
-                      .join(" ") || "—"}
-                  </td>
-                );
-              })}
-              <td className="border-t-2 border-l border-border bg-gray-50" />
-            </tr>
+              return (
+                <Fragment key={designation}>
+                  <tr key={`group-${designation}`}>
+                    <td
+                      colSpan={dates.length + 2}
+                      className="border-b border-border bg-teal-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white"
+                    >
+                      {designation}
+                    </td>
+                  </tr>
+                  {members.map((s) => {
+                    const totals = staffTotals(s.id);
+                    return (
+                      <tr key={s.id}>
+                        <td className="sticky left-0 z-10 border-b border-r border-border bg-white px-3 py-2 font-medium">
+                          {s.name}
+                        </td>
+                        {dates.map((d) => {
+                          const key = dateKey(d);
+                          const dutyCodeId = entries[entryKey(s.id, key)];
+                          const duty = dutyCodeId
+                            ? dutyCodeById.get(dutyCodeId)
+                            : null;
+                          return (
+                            <td
+                              key={key}
+                              onClick={(e) => openPicker(s.id, key, e)}
+                              className={`border-b border-border p-1 text-center align-middle ${
+                                isAdmin ? "cursor-pointer" : ""
+                              }`}
+                            >
+                              {duty ? (
+                                <span
+                                  className="inline-block w-full rounded px-1.5 py-1 text-xs font-semibold text-white"
+                                  style={{ backgroundColor: duty.color }}
+                                  title={duty.name}
+                                >
+                                  {duty.code}
+                                </span>
+                              ) : (
+                                <span className="inline-block w-full rounded px-1.5 py-1 text-xs text-gray-300 hover:bg-gray-50">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="border-b border-l border-border px-3 py-2 text-xs text-gray-500">
+                          {Array.from(totals.entries())
+                            .map(
+                              ([id, count]) =>
+                                `${dutyCodeById.get(id)?.code ?? "?"} ${count}`
+                            )
+                            .join(" · ") || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {usedDutyCodeIds.map((dutyCodeId) => {
+                    const duty = dutyCodeById.get(dutyCodeId);
+                    return (
+                      <tr
+                        key={`${designation}-total-${dutyCodeId}`}
+                        className="bg-gray-50"
+                      >
+                        <td className="sticky left-0 z-10 border-b border-r border-border bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-500">
+                          Total {duty?.name ?? "?"}
+                        </td>
+                        {dates.map((d) => {
+                          const key = dateKey(d);
+                          const count = members.filter(
+                            (m) => entries[entryKey(m.id, key)] === dutyCodeId
+                          ).length;
+                          return (
+                            <td
+                              key={key}
+                              className="border-b border-border px-2 py-1.5 text-center text-xs text-gray-500"
+                            >
+                              {count}
+                            </td>
+                          );
+                        })}
+                        <td className="border-b border-l border-border bg-gray-50" />
+                      </tr>
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
