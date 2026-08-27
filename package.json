@@ -2,7 +2,7 @@
   "name": "rota-app",
   "version": "0.1.0",
   "private": true,
-    "scripts": {
+  "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
     "build": "next build",
@@ -26,6 +26,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8",
     "zustand": "^4.5.5"
   },

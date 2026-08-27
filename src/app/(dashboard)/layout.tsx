@@ -48,6 +48,12 @@ export default async function DashboardLayout({
                 >
                   Settings
                 </Link>
+                <Link
+                  href="/import"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Import from Excel
+                </Link>
               </>
             )}
           </nav>

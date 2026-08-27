@@ -22,7 +22,7 @@ export default async function RotaPage() {
     }),
   ]);
 
-   return (
+  return (
     <div>
       <RotaGrid
         isAdmin={isAdmin}
