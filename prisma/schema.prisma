@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users                User[]
+  staff                Staff[]
+  dutyCodes            DutyCode[]
+  rotaEntries          RotaEntry[]
+  leavePeriods         LeavePeriod[]
+  nonOfficialRules     NonOfficialDayRule[]
+  nonOfficialOverrides NonOfficialDayOverride[]
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id])
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(STAFF)
+  staffId      String?  @unique
+  staff        Staff?   @relation(fields: [staffId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Staff {
+  id          String   @id @default(cuid())
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id])
+  name        String
+  contactInfo String?
+  designation String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User?
+  rotaEntries  RotaEntry[]
+  leavePeriods LeavePeriod[]
+
+  @@index([teamId, sortOrder])
+}
+
+model DutyCode {
+  id           String   @id @default(cuid())
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id])
+  code         String
+  name         String
+  color        String
+  category     String
+  isWorkingDay Boolean  @default(true)
+  isLeave      Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  rotaEntries  RotaEntry[]
+  leavePeriods LeavePeriod[]
+
+  @@unique([teamId, code])
+  @@index([teamId, sortOrder])
+}
+
+model RotaEntry {
+  id              String       @id @default(cuid())
+  teamId          String
+  team            Team         @relation(fields: [teamId], references: [id])
+  staffId         String
+  staff           Staff        @relation(fields: [staffId], references: [id])
+  date            DateTime     @db.Date
+  dutyCodeId      String
+  dutyCode        DutyCode     @relation(fields: [dutyCodeId], references: [id])
+  leavePeriodId   String?
+  leavePeriod     LeavePeriod? @relation(fields: [leavePeriodId], references: [id])
+  note            String?
+  updatedByUserId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([teamId, staffId, date])
+  @@index([teamId, date])
+}
+
+model LeavePeriod {
+  id         String   @id @default(cuid())
+  teamId     String
+  team       Team     @relation(fields: [teamId], references: [id])
+  staffId    String
+  staff      Staff    @relation(fields: [staffId], references: [id])
+  dutyCodeId String
+  dutyCode   DutyCode @relation(fields: [dutyCodeId], references: [id])
+  startDate  DateTime @db.Date
+  endDate    DateTime @db.Date
+  note       String?
+  createdAt  DateTime @default(now())
+
+  rotaEntries RotaEntry[]
+
+  @@index([teamId, staffId])
+}
+
+model NonOfficialDayRule {
+  id      String  @id @default(cuid())
+  teamId  String
+  team    Team    @relation(fields: [teamId], references: [id])
+  weekday Int
+  enabled Boolean @default(true)
+
+  @@unique([teamId, weekday])
+}
+
+model NonOfficialDayOverride {
+  id            String   @id @default(cuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id])
+  date          DateTime @db.Date
+  isNonOfficial Boolean
+
+  @@unique([teamId, date])
+}
