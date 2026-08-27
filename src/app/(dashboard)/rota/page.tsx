@@ -7,7 +7,7 @@ export default async function RotaPage() {
   const teamId = (session?.user as any)?.teamId as string;
   const isAdmin = (session?.user as any)?.role === "ADMIN";
 
-  const [staff, dutyCodes] = await Promise.all([
+  const [staff, dutyCodes, team] = await Promise.all([
     prisma.staff.findMany({
       where: { teamId, isActive: true },
       orderBy: { sortOrder: "asc" },
@@ -16,21 +16,17 @@ export default async function RotaPage() {
       where: { teamId, isActive: true },
       orderBy: { sortOrder: "asc" },
     }),
+    prisma.team.findUnique({
+      where: { id: teamId },
+      select: { name: true, departmentUnit: true, logoDataUrl: true },
+    }),
   ]);
 
-  return (
+   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold">Rota</h1>
-        <p className="text-sm text-gray-500">
-          {isAdmin
-            ? "Click a cell to assign a duty. Changes save automatically."
-            : "You have view-only access to the rota."}
-        </p>
-      </div>
-
       <RotaGrid
         isAdmin={isAdmin}
+        team={team}
         staff={staff.map((s: (typeof staff)[number]) => ({
           id: s.id,
           name: s.name,

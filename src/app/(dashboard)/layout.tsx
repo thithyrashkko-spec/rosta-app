@@ -35,12 +35,20 @@ export default async function DashboardLayout({
               </Link>
             ))}
             {isAdmin && (
-              <Link
-                href="/users"
-                className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Users
-              </Link>
+              <>
+                <Link
+                  href="/users"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Users
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Settings
+                </Link>
+              </>
             )}
           </nav>
 
