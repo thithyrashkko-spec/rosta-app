@@ -15,8 +15,9 @@ const updateStaffSchema = z.object({
 // (which references staffId) always stays intact.
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,14 +37,14 @@ export async function PATCH(
   }
 
   const existing = await prisma.staff.findFirst({
-    where: { id: params.id, teamId },
+    where: { id, teamId },
   });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const staff = await prisma.staff.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
   });
 
