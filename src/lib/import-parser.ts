@@ -45,14 +45,14 @@ export function parseRosterSheet(
 
   let headerRowIdx = -1;
   let snoCol = -1;
+  const snoVariants = new Set(["sno", "slno", "sino", "sn", "s/n"]);
   for (let r = 0; r < rows.length && headerRowIdx === -1; r++) {
     for (let c = 0; c < (rows[r]?.length ?? 0); c++) {
       const val = String(rows[r][c] ?? "")
         .trim()
         .toLowerCase()
-        .replace(/\./g, "")
-        .replace(/\s/g, "");
-      if (val === "sno" || val === "sno") {
+        .replace(/[^a-z]/g, "");
+      if (snoVariants.has(val)) {
         headerRowIdx = r;
         snoCol = c;
         break;
@@ -61,12 +61,27 @@ export function parseRosterSheet(
   }
 
   if (headerRowIdx === -1) {
+    const preview = rows
+      .slice(0, 8)
+      .map(
+        (r, i) =>
+          `Row ${i + 1}: ${r
+            .slice(0, 6)
+            .map((c) => String(c ?? "").trim())
+            .filter(Boolean)
+            .join(" | ")}`
+      )
+      .filter((line) => !line.endsWith(":"))
+      .join("  ///  ");
     return {
       staff: [],
       assignments: [],
       dateColumns: [],
       warnings: [
-        'Could not find a header row containing "SNO". Expected column order: SNO, Designation, Name, RC No, then one column per day.',
+        'Could not find a header row containing "SNO" (or S.No / Sl No). Expected column order: SNO, Designation, Name, RC No, then one column per day.',
+        preview
+          ? `Here's what the first few rows actually contain, for reference: ${preview}`
+          : "The sheet appears to be empty.",
       ],
     };
   }

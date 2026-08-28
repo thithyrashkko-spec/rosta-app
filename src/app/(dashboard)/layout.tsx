@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/staff", label: "Staff" },
   { href: "/duty-codes", label: "Duty codes" },
   { href: "/leave", label: "Leave" },
+  { href: "/requests", label: "Requests" },
   { href: "/reports", label: "Reports" },
 ];
 

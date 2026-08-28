@@ -29,6 +29,7 @@ export async function GET() {
       name: true,
       role: true,
       createdAt: true,
+      staffId: true,
     },
     orderBy: { createdAt: "asc" },
   });
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
       passwordHash,
       role: parsed.data.role,
     },
-    select: { id: true, email: true, name: true, role: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, createdAt: true, staffId: true },
   });
 
   return NextResponse.json(user, { status: 201 });

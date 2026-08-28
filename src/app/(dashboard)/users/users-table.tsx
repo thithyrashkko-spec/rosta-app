@@ -8,9 +8,16 @@ type UserRow = {
   name: string;
   role: "ADMIN" | "STAFF";
   createdAt: string;
+  staffId: string | null;
 };
 
-export function UsersTable({ initialUsers }: { initialUsers: UserRow[] }) {
+export function UsersTable({
+  initialUsers,
+  staffOptions,
+}: {
+  initialUsers: UserRow[];
+  staffOptions: { id: string; name: string }[];
+}) {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [adding, setAdding] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
@@ -22,6 +29,19 @@ export function UsersTable({ initialUsers }: { initialUsers: UserRow[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
     });
+  }
+
+  async function handleStaffLinkChange(id: string, staffId: string | null) {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, staffId } : u)));
+    const res = await fetch(`/api/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ staffId }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      alert(data?.error || "Couldn't update the staff link.");
+    }
   }
 
   return (
@@ -36,17 +56,17 @@ export function UsersTable({ initialUsers }: { initialUsers: UserRow[] }) {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-white">
-        <div className="grid grid-cols-[1.5fr_1fr_140px_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="grid grid-cols-[1.3fr_1fr_1.3fr_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
           <div>Name / email</div>
           <div>Role</div>
-          <div />
+          <div>Linked staff member</div>
           <div className="text-right">Actions</div>
         </div>
 
         {users.map((u) => (
           <div
             key={u.id}
-            className="grid grid-cols-[1.5fr_1fr_140px_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0"
+            className="grid grid-cols-[1.3fr_1fr_1.3fr_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0"
           >
             <div>
               <div className="font-medium">{u.name}</div>
@@ -64,7 +84,22 @@ export function UsersTable({ initialUsers }: { initialUsers: UserRow[] }) {
                 <option value="ADMIN">Admin (can edit)</option>
               </select>
             </div>
-            <div />
+            <div>
+              <select
+                value={u.staffId ?? ""}
+                onChange={(e) =>
+                  handleStaffLinkChange(u.id, e.target.value || null)
+                }
+                className="w-full rounded-md border border-border px-2 py-1 text-sm"
+              >
+                <option value="">Not linked</option>
+                {staffOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="text-right">
               <button
                 onClick={() => setResettingId(u.id)}

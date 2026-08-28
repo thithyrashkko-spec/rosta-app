@@ -12,11 +12,25 @@ export default async function UsersPage() {
     redirect("/rota");
   }
 
-  const users = await prisma.user.findMany({
-    where: { teamId },
-    select: { id: true, email: true, name: true, role: true, createdAt: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const [users, staff] = await Promise.all([
+    prisma.user.findMany({
+      where: { teamId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        staffId: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.staff.findMany({
+      where: { teamId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
 
   return (
     <div className="max-w-3xl">
@@ -25,7 +39,9 @@ export default async function UsersPage() {
         <p className="text-sm text-gray-500">
           Create a login for each team member. Give someone the{" "}
           <strong>Staff</strong> role for view-only access to the rota, or{" "}
-          <strong>Admin</strong> if they should be able to edit it.
+          <strong>Admin</strong> if they should be able to edit it. Link a
+          login to a staff member so they can submit their own duty
+          requests.
         </p>
       </div>
 
@@ -34,6 +50,7 @@ export default async function UsersPage() {
           ...u,
           createdAt: u.createdAt.toISOString(),
         }))}
+        staffOptions={staff}
       />
     </div>
   );

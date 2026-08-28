@@ -55,6 +55,9 @@ export function RotaGrid({
   const [nonOfficialDates, setNonOfficialDates] = useState<Set<string>>(
     new Set()
   );
+  const [pendingRequestKeys, setPendingRequestKeys] = useState<
+    Record<string, "PENDING" | "APPROVED">
+  >({});
   const [loading, setLoading] = useState(false);
   const [picker, setPicker] = useState<{
     staffId: string;
@@ -107,6 +110,15 @@ export function RotaGrid({
         setNonOfficialDates(new Set(data.nonOfficialDates));
       })
       .finally(() => setLoading(false));
+
+    fetch(`/api/duty-requests/badges?start=${start}&end=${end}`)
+      .then((r) => r.json())
+      .then((reqs: { staffId: string; date: string; status: "PENDING" | "APPROVED" }[]) => {
+        const map: Record<string, "PENDING" | "APPROVED"> = {};
+        for (const r of reqs) map[entryKey(r.staffId, r.date)] = r.status;
+        setPendingRequestKeys(map);
+      })
+      .catch(() => {});
   }, [dates]);
 
   async function applyChange(
@@ -350,11 +362,13 @@ export function RotaGrid({
                           const duty = dutyCodeId
                             ? dutyCodeById.get(dutyCodeId)
                             : null;
+                          const requestStatus =
+                            pendingRequestKeys[entryKey(s.id, key)];
                           return (
                             <td
                               key={key}
                               onClick={(e) => openPicker(s.id, key, e)}
-                              className={`border-b border-border p-1 text-center align-middle ${
+                              className={`relative border-b border-border p-1 text-center align-middle ${
                                 isAdmin ? "cursor-pointer" : ""
                               }`}
                             >
@@ -369,6 +383,22 @@ export function RotaGrid({
                               ) : (
                                 <span className="inline-block w-full rounded px-1.5 py-1 text-xs text-gray-300 hover:bg-gray-50">
                                   —
+                                </span>
+                              )}
+                              {requestStatus && (
+                                <span
+                                  className={`absolute right-0.5 top-0.5 rounded px-1 text-[9px] font-bold leading-none text-white ${
+                                    requestStatus === "PENDING"
+                                      ? "bg-amber-400"
+                                      : "bg-green-500"
+                                  }`}
+                                  title={
+                                    requestStatus === "PENDING"
+                                      ? "Pending duty request"
+                                      : "Approved duty request"
+                                  }
+                                >
+                                  R
                                 </span>
                               )}
                             </td>

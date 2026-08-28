@@ -23,6 +23,7 @@ model Team {
   leavePeriods         LeavePeriod[]
   nonOfficialRules     NonOfficialDayRule[]
   nonOfficialOverrides NonOfficialDayOverride[]
+  dutyRequests         DutyRequest[]
 }
 
 enum UserRole {
@@ -62,6 +63,7 @@ model Staff {
   user         User?
   rotaEntries  RotaEntry[]
   leavePeriods LeavePeriod[]
+  dutyRequests DutyRequest[]
 
   @@index([teamId, sortOrder])
 }
@@ -85,6 +87,7 @@ model DutyCode {
 
   rotaEntries  RotaEntry[]
   leavePeriods LeavePeriod[]
+  dutyRequests DutyRequest[]
 
   @@unique([teamId, code])
   @@index([teamId, sortOrder])
@@ -152,4 +155,33 @@ model NonOfficialDayOverride {
   isNonOfficial Boolean
 
   @@unique([teamId, date])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// A staff member's request to be put on a specific duty code on a specific
+// date (a normal duty, or an "Off"/leave-type code -- both are just duty
+// codes, so one model covers both). Approving one writes straight into
+// RotaEntry, same as a manual grid edit.
+model DutyRequest {
+  id              String        @id @default(cuid())
+  teamId          String
+  team            Team          @relation(fields: [teamId], references: [id])
+  staffId         String
+  staff           Staff         @relation(fields: [staffId], references: [id])
+  date            DateTime      @db.Date
+  dutyCodeId      String
+  dutyCode        DutyCode      @relation(fields: [dutyCodeId], references: [id])
+  note            String?
+  status          RequestStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  decidedAt       DateTime?
+  decidedByUserId String?
+
+  @@index([teamId, staffId])
+  @@index([teamId, status])
 }
