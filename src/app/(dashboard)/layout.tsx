@@ -6,9 +6,8 @@ import { SignOutButton } from "@/components/sign-out-button";
 const NAV_ITEMS = [
   { href: "/rota", label: "Rota" },
   { href: "/staff", label: "Staff" },
-  { href: "/duty-codes", label: "Duty codes" },
-  { href: "/leave", label: "Leave" },
   { href: "/requests", label: "Requests" },
+  { href: "/exchanges", label: "Exchanges" },
   { href: "/reports", label: "Reports" },
 ];
 
@@ -37,6 +36,18 @@ export default async function DashboardLayout({
             ))}
             {isAdmin && (
               <>
+                <Link
+                  href="/duty-codes"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Duty codes
+                </Link>
+                <Link
+                  href="/leave"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Leave
+                </Link>
                 <Link
                   href="/users"
                   className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"

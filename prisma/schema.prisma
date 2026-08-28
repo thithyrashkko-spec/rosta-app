@@ -24,6 +24,7 @@ model Team {
   nonOfficialRules     NonOfficialDayRule[]
   nonOfficialOverrides NonOfficialDayOverride[]
   dutyRequests         DutyRequest[]
+  dutyExchanges        DutyExchange[]
 }
 
 enum UserRole {
@@ -64,6 +65,8 @@ model Staff {
   rotaEntries  RotaEntry[]
   leavePeriods LeavePeriod[]
   dutyRequests DutyRequest[]
+  exchangesAsInitiator DutyExchange[] @relation("ExchangeStaffA")
+  exchangesAsPartner   DutyExchange[] @relation("ExchangeStaffB")
 
   @@index([teamId, sortOrder])
 }
@@ -88,6 +91,8 @@ model DutyCode {
   rotaEntries  RotaEntry[]
   leavePeriods LeavePeriod[]
   dutyRequests DutyRequest[]
+  exchangeSnapshotsA DutyExchange[] @relation("ExchangeStaffADuty")
+  exchangeSnapshotsB DutyExchange[] @relation("ExchangeStaffBDuty")
 
   @@unique([teamId, code])
   @@index([teamId, sortOrder])
@@ -183,5 +188,46 @@ model DutyRequest {
   decidedByUserId String?
 
   @@index([teamId, staffId])
+  @@index([teamId, status])
+}
+
+enum ExchangeStatus {
+  PENDING_PARTNER
+  PENDING_ADMIN
+  APPROVED
+  REJECTED
+}
+
+// A staff-to-staff proposal to swap whatever each has on a given date.
+// staffA is the initiator (auto-approved by creating it); staffB is the
+// partner who must accept; once both have agreed an admin gives final
+// approval, which is when the actual RotaEntry swap happens. The duty
+// each side had at proposal time is snapshotted so the swap is
+// predictable even if the grid changes in the meantime.
+model DutyExchange {
+  id     String @id @default(cuid())
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+  date   DateTime @db.Date
+
+  staffAId String
+  staffA   Staff  @relation("ExchangeStaffA", fields: [staffAId], references: [id])
+  staffBId String
+  staffB   Staff  @relation("ExchangeStaffB", fields: [staffBId], references: [id])
+
+  staffADutyCodeId String?
+  staffADutyCode   DutyCode? @relation("ExchangeStaffADuty", fields: [staffADutyCodeId], references: [id])
+  staffBDutyCodeId String?
+  staffBDutyCode   DutyCode? @relation("ExchangeStaffBDuty", fields: [staffBDutyCodeId], references: [id])
+
+  status          ExchangeStatus @default(PENDING_PARTNER)
+  note            String?
+  createdAt       DateTime       @default(now())
+  partnerDecidedAt DateTime?
+  adminDecidedAt  DateTime?
+  decidedByUserId String?
+
+  @@index([teamId, staffAId])
+  @@index([teamId, staffBId])
   @@index([teamId, status])
 }
