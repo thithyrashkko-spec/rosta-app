@@ -11,7 +11,12 @@ import {
   type ViewMode,
 } from "@/lib/date-utils";
 
-type Staff = { id: string; name: string; designation: string | null };
+type Staff = {
+  id: string;
+  name: string;
+  designation: string | null;
+  department: string | null;
+};
 type DutyCode = {
   id: string;
   code: string;
@@ -67,6 +72,25 @@ export function RotaGrid({
   } | null>(null);
   const [addingCode, setAddingCode] = useState(false);
 
+  const departments = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of staff) set.add(s.department?.trim() || "General");
+    return Array.from(set);
+  }, [staff]);
+
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
+    null
+  );
+  const activeDepartment = selectedDepartment ?? departments[0] ?? "General";
+
+  const filteredStaff = useMemo(
+    () =>
+      staff.filter(
+        (s) => (s.department?.trim() || "General") === activeDepartment
+      ),
+    [staff, activeDepartment]
+  );
+
   const undoStack = useRef<UndoAction[]>([]);
   const redoStack = useRef<UndoAction[]>([]);
   const [, forceRender] = useState(0);
@@ -83,13 +107,13 @@ export function RotaGrid({
 
   const groups = useMemo(() => {
     const map = new Map<string, Staff[]>();
-    for (const s of staff) {
+    for (const s of filteredStaff) {
       const key = s.designation?.trim() || "Staff";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }
     return Array.from(map.entries());
-  }, [staff]);
+  }, [filteredStaff]);
 
   // Fetch entries whenever the visible date range changes.
   useEffect(() => {
@@ -252,6 +276,24 @@ export function RotaGrid({
 
   return (
     <div>
+      {departments.length > 1 && (
+        <div className="mb-4 flex rounded-md border border-border bg-white p-0.5 text-sm w-fit print:hidden">
+          {departments.map((d) => (
+            <button
+              key={d}
+              onClick={() => setSelectedDepartment(d)}
+              className={`rounded px-3 py-1.5 ${
+                activeDepartment === d
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      )}
+
       {team && (team.name || team.departmentUnit || team.logoDataUrl) && (
         <div className="mb-4 flex items-center gap-3 border-b border-border pb-4">
           {team.logoDataUrl && (

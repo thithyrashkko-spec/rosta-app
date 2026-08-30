@@ -7,6 +7,7 @@ const createStaffSchema = z.object({
   name: z.string().min(1),
   contactInfo: z.string().optional().nullable(),
   designation: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
 });
 
 // GET /api/staff?includeInactive=1
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       contactInfo: parsed.data.contactInfo ?? null,
       designation: parsed.data.designation ?? null,
+      department: parsed.data.department ?? null,
       sortOrder: (last?.sortOrder ?? -1) + 1,
     },
   });

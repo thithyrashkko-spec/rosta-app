@@ -31,6 +31,7 @@ export default async function RotaPage() {
           id: s.id,
           name: s.name,
           designation: s.designation,
+          department: s.department,
         }))}
         dutyCodes={dutyCodes.map((d: (typeof dutyCodes)[number]) => ({
           id: d.id,

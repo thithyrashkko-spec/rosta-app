@@ -22,6 +22,7 @@ type Staff = {
   name: string;
   contactInfo: string | null;
   designation: string | null;
+  department: string | null;
   isActive: boolean;
   sortOrder: number;
 };
@@ -230,7 +231,12 @@ function StaffRow({
         )}
       </div>
       <div className="text-gray-500">{staff.contactInfo || "—"}</div>
-      <div className="text-gray-500">{staff.designation || "—"}</div>
+      <div className="text-gray-500">
+        {staff.designation || "—"}
+        {staff.department && (
+          <div className="text-xs text-gray-400">{staff.department}</div>
+        )}
+      </div>
       <div className="flex justify-end gap-3">
         {isAdmin && (
           <>
@@ -265,6 +271,7 @@ function StaffFormModal({
   const [name, setName] = useState(staff?.name ?? "");
   const [contactInfo, setContactInfo] = useState(staff?.contactInfo ?? "");
   const [designation, setDesignation] = useState(staff?.designation ?? "");
+  const [department, setDepartment] = useState(staff?.department ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -279,7 +286,7 @@ function StaffFormModal({
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contactInfo, designation }),
+      body: JSON.stringify({ name, contactInfo, designation, department }),
     });
 
     setSaving(false);
@@ -329,6 +336,19 @@ function StaffFormModal({
             onChange={(e) => setDesignation(e.target.value)}
             className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900/10"
           />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Department / team</label>
+          <input
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            placeholder="e.g. Ambulance, Paramedics"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900/10"
+          />
+          <p className="text-xs text-gray-400">
+            Controls which separate rota this person shows up on.
+          </p>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

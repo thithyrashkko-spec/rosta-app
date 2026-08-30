@@ -7,6 +7,7 @@ const updateStaffSchema = z.object({
   name: z.string().min(1).optional(),
   contactInfo: z.string().optional().nullable(),
   designation: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
