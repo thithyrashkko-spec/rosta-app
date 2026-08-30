@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LeaveCalendar } from "./leave-calendar";
 
 type Period = {
   id: string;
@@ -23,6 +24,7 @@ export function LeaveView({
   dutyCodes: { id: string; name: string; isLeave: boolean }[];
 }) {
   const [periods, setPeriods] = useState<Period[]>(initialPeriods);
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [staffId, setStaffId] = useState(staff[0]?.id ?? "");
   const [dutyCodeId, setDutyCodeId] = useState(
     dutyCodes.find((d) => d.isLeave)?.id ?? dutyCodes[0]?.id ?? ""
@@ -156,41 +158,64 @@ export function LeaveView({
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-white">
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-          <div>Staff</div>
-          <div>Type</div>
-          <div>Start</div>
-          <div>End</div>
-          <div className="text-right">Actions</div>
-        </div>
-
-        {periods.map((p) => (
-          <div
-            key={p.id}
-            className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0"
-          >
-            <div className="font-medium">{p.staffName}</div>
-            <div>{p.dutyCodeName}</div>
-            <div className="text-gray-500">{p.startDate}</div>
-            <div className="text-gray-500">{p.endDate}</div>
-            <div className="text-right">
-              <button
-                onClick={() => handleDelete(p.id)}
-                className="text-gray-500 hover:text-red-600"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {periods.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-400">
-            No leave periods yet.
-          </div>
-        )}
+      <div className="flex rounded-md border border-border bg-white p-0.5 text-sm w-fit">
+        <button
+          onClick={() => setView("list")}
+          className={`rounded px-3 py-1 ${
+            view === "list" ? "bg-gray-900 text-white" : "text-gray-600"
+          }`}
+        >
+          List
+        </button>
+        <button
+          onClick={() => setView("calendar")}
+          className={`rounded px-3 py-1 ${
+            view === "calendar" ? "bg-gray-900 text-white" : "text-gray-600"
+          }`}
+        >
+          Calendar
+        </button>
       </div>
+
+      {view === "calendar" ? (
+        <LeaveCalendar periods={periods} />
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border bg-white">
+          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div>Staff</div>
+            <div>Type</div>
+            <div>Start</div>
+            <div>End</div>
+            <div className="text-right">Actions</div>
+          </div>
+
+          {periods.map((p) => (
+            <div
+              key={p.id}
+              className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0"
+            >
+              <div className="font-medium">{p.staffName}</div>
+              <div>{p.dutyCodeName}</div>
+              <div className="text-gray-500">{p.startDate}</div>
+              <div className="text-gray-500">{p.endDate}</div>
+              <div className="text-right">
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="text-gray-500 hover:text-red-600"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {periods.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-gray-400">
+              No leave periods yet.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

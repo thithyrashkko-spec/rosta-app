@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// A Team is the account/tenant boundary. Everything is scoped to a Team
+// from day one, even though today there is only one team.
 model Team {
   id             String   @id @default(cuid())
   name           String
@@ -30,6 +32,8 @@ enum UserRole {
   STAFF
 }
 
+// A login account. Distinct from Staff (a roster row) -- a login may or
+// may not correspond to a person on the roster.
 model User {
   id           String   @id @default(cuid())
   teamId       String
@@ -43,6 +47,8 @@ model User {
   createdAt    DateTime @default(now())
 }
 
+// A roster member. Never hard-deleted -- isActive controls whether they
+// show up on new rotas, but historical RotaEntry rows always survive.
 model Staff {
   id          String   @id @default(cuid())
   teamId      String
@@ -65,6 +71,9 @@ model Staff {
   @@index([teamId, sortOrder])
 }
 
+// A configurable shift/duty/leave code. category is free text and fully
+// custom; isWorkingDay / isLeave are the machine-readable flags that drive
+// coverage counts, non-official-day tracking, and leave reporting.
 model DutyCode {
   id           String   @id @default(cuid())
   teamId       String
@@ -89,6 +98,7 @@ model DutyCode {
   @@index([teamId, sortOrder])
 }
 
+// One cell in the rota grid: a single staff member on a single date.
 model RotaEntry {
   id              String       @id @default(cuid())
   teamId          String
@@ -109,6 +119,9 @@ model RotaEntry {
   @@index([teamId, date])
 }
 
+// A multi-day leave booking. Auto-fills RotaEntry rows for its range;
+// editing a single day inside the range detaches that RotaEntry from the
+// period (leavePeriodId -> null) without deleting it.
 model LeavePeriod {
   id         String   @id @default(cuid())
   teamId     String
@@ -127,16 +140,18 @@ model LeavePeriod {
   @@index([teamId, staffId])
 }
 
+// "All Fridays are non-official" style rule.
 model NonOfficialDayRule {
   id      String  @id @default(cuid())
   teamId  String
   team    Team    @relation(fields: [teamId], references: [id])
-  weekday Int
+  weekday Int     // 0 = Sunday .. 6 = Saturday
   enabled Boolean @default(true)
 
   @@unique([teamId, weekday])
 }
 
+// Manual toggle for one specific date, overriding the weekday rule.
 model NonOfficialDayOverride {
   id            String   @id @default(cuid())
   teamId        String
@@ -153,6 +168,10 @@ enum RequestStatus {
   REJECTED
 }
 
+// A staff member's request to be put on a specific duty code on a specific
+// date (a normal duty, or an "Off"/leave-type code -- both are just duty
+// codes, so one model covers both). Approving one writes straight into
+// RotaEntry, same as a manual grid edit.
 model DutyRequest {
   id              String        @id @default(cuid())
   teamId          String
@@ -179,6 +198,12 @@ enum ExchangeStatus {
   REJECTED
 }
 
+// A staff-to-staff proposal to swap whatever each has on a given date.
+// staffA is the initiator (auto-approved by creating it); staffB is the
+// partner who must accept; once both have agreed an admin gives final
+// approval, which is when the actual RotaEntry swap happens. The duty
+// each side had at proposal time is snapshotted so the swap is
+// predictable even if the grid changes in the meantime.
 model DutyExchange {
   id     String @id @default(cuid())
   teamId String
