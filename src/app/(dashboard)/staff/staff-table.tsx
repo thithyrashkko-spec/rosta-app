@@ -38,6 +38,9 @@ export function StaffTable({
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState<Staff | null>(null);
   const [adding, setAdding] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDepartment, setBulkDepartment] = useState("");
+  const [applyingBulk, setApplyingBulk] = useState(false);
   const [, startTransition] = useTransition();
 
   const sensors = useSensors(
@@ -101,6 +104,44 @@ export function StaffTable({
     });
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) =>
+      prev.size === visible.length ? new Set() : new Set(visible.map((s) => s.id))
+    );
+  }
+
+  async function applyBulkDepartment() {
+    if (!bulkDepartment.trim() || selectedIds.size === 0) return;
+    setApplyingBulk(true);
+    const ids = Array.from(selectedIds);
+    await Promise.all(
+      ids.map((id) =>
+        fetch(`/api/staff/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ department: bulkDepartment.trim() }),
+        })
+      )
+    );
+    setStaff((prev) =>
+      prev.map((s) =>
+        selectedIds.has(s.id) ? { ...s, department: bulkDepartment.trim() } : s
+      )
+    );
+    setApplyingBulk(false);
+    setSelectedIds(new Set());
+    setBulkDepartment("");
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -126,9 +167,45 @@ export function StaffTable({
         )}
       </div>
 
+      {isAdmin && selectedIds.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-gray-50 px-3 py-2">
+          <span className="text-sm text-gray-600">
+            {selectedIds.size} selected
+          </span>
+          <input
+            value={bulkDepartment}
+            onChange={(e) => setBulkDepartment(e.target.value)}
+            placeholder="Department, e.g. Ambulance"
+            className="rounded-md border border-border px-2 py-1 text-sm"
+          />
+          <button
+            onClick={applyBulkDepartment}
+            disabled={applyingBulk || !bulkDepartment.trim()}
+            className="rounded-md bg-gray-900 px-3 py-1 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            {applyingBulk ? "Applying…" : "Set department"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-gray-500 hover:text-gray-900"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-xl border border-border bg-white">
-        <div className="grid grid-cols-[24px_1.5fr_1.5fr_1fr_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="grid grid-cols-[24px_20px_1.5fr_1.5fr_1fr_auto] gap-2 border-b border-border bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
           <div />
+          {isAdmin ? (
+            <input
+              type="checkbox"
+              checked={selectedIds.size > 0 && selectedIds.size === visible.length}
+              onChange={toggleSelectAll}
+            />
+          ) : (
+            <div />
+          )}
           <div>Name</div>
           <div>Contact</div>
           <div>Role</div>
@@ -150,6 +227,8 @@ export function StaffTable({
                 key={s.id}
                 staff={s}
                 isAdmin={isAdmin}
+                selected={selectedIds.has(s.id)}
+                onToggleSelect={() => toggleSelect(s.id)}
                 onEdit={() => setEditing(s)}
                 onToggleLeft={() => handleMarkLeft(s)}
               />
@@ -190,11 +269,15 @@ export function StaffTable({
 function StaffRow({
   staff,
   isAdmin,
+  selected,
+  onToggleSelect,
   onEdit,
   onToggleLeft,
 }: {
   staff: Staff;
   isAdmin: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onEdit: () => void;
   onToggleLeft: () => void;
 }) {
@@ -210,7 +293,7 @@ function StaffRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`grid grid-cols-[24px_1.5fr_1.5fr_1fr_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0 ${
+      className={`grid grid-cols-[24px_20px_1.5fr_1.5fr_1fr_auto] items-center gap-2 border-b border-border px-4 py-2.5 text-sm last:border-b-0 ${
         !staff.isActive ? "opacity-50" : ""
       }`}
     >
@@ -222,6 +305,15 @@ function StaffRow({
       >
         ⠿
       </button>
+      {isAdmin ? (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+        />
+      ) : (
+        <div />
+      )}
       <div className="font-medium">
         {staff.name}
         {!staff.isActive && (
