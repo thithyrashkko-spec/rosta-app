@@ -31,8 +31,10 @@ export async function getDepartmentScope(
 
 // Prisma `where` fragment for the Staff model matching a scope's allowed
 // department. Use directly for Staff queries, or nested under `staff: {}`
-// for queries joining to Staff (RotaEntry, DutyRequest, etc.).
-export function staffDepartmentWhere(scope: DepartmentScope) {
+// for queries joining to Staff (RotaEntry, DutyRequest, etc.). Typed as
+// `any` since the exact shape varies by branch and callers spread it into
+// differently-typed Prisma `where` objects (Staff, RotaEntry, DutyRequest).
+export function staffDepartmentWhere(scope: DepartmentScope): any {
   if (!scope.restricted) return {};
   if (!scope.linked) return { id: "__no_access__" };
   if (scope.department) return { department: scope.department };
