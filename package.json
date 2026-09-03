@@ -2,7 +2,7 @@
   "name": "rota-app",
   "version": "0.1.0",
   "private": true,
-   "scripts": {
+  "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",

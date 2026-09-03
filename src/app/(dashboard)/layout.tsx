@@ -49,6 +49,12 @@ export default async function DashboardLayout({
                   Leave
                 </Link>
                 <Link
+                  href="/holidays"
+                  className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Holidays
+                </Link>
+                <Link
                   href="/users"
                   className="block rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
                 >
